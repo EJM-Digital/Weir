@@ -151,6 +151,7 @@ public sealed class StartProgressFileTests : IDisposable
     public void A_progress_line_that_is_not_valid_json_is_no_reading()
     {
         Assert.Null(StartProgressFile.ParseLine(StartProgressFile.Prefix + "{not json"));
+        Assert.Null(StartProgressFile.ParseLine(StartProgressFile.Prefix + "[1,2]"));
         Assert.Null(StartProgressFile.ParseLine("a line the server printed for some other reason"));
     }
 

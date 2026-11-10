@@ -35,6 +35,8 @@ public sealed class ServerHostTests
 
         Assert.Equal(Policy.StartLimitBurst, gaveUp.Attempts);
         Assert.StartsWith("exited with code 3", gaveUp.Reason, StringComparison.Ordinal);
+        Assert.Matches(@"^exited with code 3 after running [0-9.]+ s [(].+[)]$", gaveUp.Reason);
+        Assert.Equal($"Weir did not start after {Policy.StartLimitBurst} attempts; the last failed: {gaveUp.Reason}", gaveUp.Message);
         // The waits between the five attempts, with the jitter's random number at 0: half of 2, 4, 8 and 16 seconds.
         Assert.Equal(
             [TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(4), TimeSpan.FromSeconds(8)],
@@ -422,9 +424,32 @@ public sealed class ServerHostTests
         var gaveUp = await RunToEndAsync(rig, start, After(rig.LatestExitedAsync));
 
         Assert.Equal(1, gaveUp.Attempts);
+        Assert.Equal($"Weir cannot start: {Sentence}", gaveUp.Message);
         Assert.Single(File.ReadAllLines(Path.Combine(rig.Server, "starts.txt")));
         Assert.Equal(new StartupError(Headline, Sentence), rig.Host.StartupError);
         Assert.Contains("The server said why it cannot start, so it is not tried again", rig.TrayLog, StringComparison.Ordinal);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task The_reason_the_last_start_failed_is_dropped_the_moment_Restart_Weir_begins_again()
+    {
+        using var rig = new StartRig();
+        var failNote = Path.Combine(rig.Server, "fail-start.txt");
+        File.WriteAllText(failNote, "Couldn't save a copy of its data before updating\nThe drive is full.");
+        var start = rig.Host.StartAsync(CancellationToken.None);
+        await RunToEndAsync(rig, start, After(rig.LatestExitedAsync));
+        Assert.NotNull(rig.Host.StartupError);
+        File.Delete(failNote);
+        var seen = new List<(ServerPhase Phase, StartupError? Said)>();
+        rig.Host.PhaseChanged += () => seen.Add((rig.Host.Phase, rig.Host.StartupError));
+
+        var restart = rig.Host.RestartNowAsync(CancellationToken.None);
+        await rig.DriveAsync(restart, After(rig.LatestListeningAsync));
+
+        Assert.True(await restart);
+        Assert.Contains(seen, change => change.Phase == ServerPhase.Starting);
+        Assert.All(seen, change => Assert.Null(change.Said));
+        Assert.Null(rig.Host.StartupError);
     }
 
     [Fact(Timeout = TestTimeoutMs)]
@@ -444,6 +469,7 @@ public sealed class ServerHostTests
             }
         }));
         Assert.Equal("3", rig.Starts[^1].Attempt);
+        Assert.Contains("; attempt 2: exited with code 7", rig.Starts[^1].Failures, StringComparison.Ordinal);
         var startsBefore = rig.Starts.Count;
         StartRig.Steer("WEIR_STANDIN_EXIT_CODE", null);
 
@@ -459,8 +485,10 @@ public sealed class ServerHostTests
         Assert.Equal(ServerPhase.Running, rig.Host.Phase);
     }
 
-    [Fact(Timeout = TestTimeoutMs)]
-    public async Task A_crash_after_a_port_change_is_counted_from_the_change_and_not_from_the_failures_before_it()
+    [Theory(Timeout = TestTimeoutMs)]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_crash_after_a_start_that_needed_retries_is_counted_from_the_change_or_the_stable_run_and_not_from_the_failures_before_it(bool aPortChangeIntervenes)
     {
         using var rig = new StartRig();
         StartRig.Steer("WEIR_STANDIN_EXIT_CODE", "7");
@@ -475,10 +503,20 @@ public sealed class ServerHostTests
                 await rig.LatestListeningAsync();
             }
         }));
+        Assert.Contains("Weir started on attempt 3, after 2 failed attempts: ", rig.TrayLog, StringComparison.Ordinal);
         StartRig.Steer("WEIR_STANDIN_EXIT_CODE", null);
-        var move = rig.Host.MoveToPortAsync(StartRig.AnotherPort(), CancellationToken.None);
-        await rig.DriveAsync(move, After(rig.LatestListeningAsync));
-        Assert.Equal(PortMove.Moved, await move);
+        if (aPortChangeIntervenes)
+        {
+            var move = rig.Host.MoveToPortAsync(StartRig.AnotherPort(), CancellationToken.None);
+            await rig.DriveAsync(move, After(rig.LatestListeningAsync));
+            Assert.Equal(PortMove.Moved, await move);
+        }
+        else
+        {
+            // The server ran ready for as long as it takes to be called stable before it crashed.
+            rig.Clock.Advance(StartPolicy.Default.StableAfter);
+        }
+
         var gaveUp = false;
         rig.Host.Watch(() => gaveUp = true, CancellationToken.None);
         var startsBefore = rig.Starts.Count;
@@ -520,6 +558,7 @@ public sealed class ServerHostTests
 
         Assert.Equal(1, gaveUp.Attempts);
         Assert.Contains("could not be stopped", gaveUp.Reason, StringComparison.Ordinal);
+        Assert.Equal($"Weir did not start after 1 attempts; the last failed: {gaveUp.Reason}", gaveUp.Message);
         Assert.Single(rig.Starts);
         Assert.Single(rig.Running());
         Assert.Equal(ServerPhase.Stopped, rig.Host.Phase);

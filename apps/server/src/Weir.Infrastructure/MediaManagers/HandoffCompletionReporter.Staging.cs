@@ -27,6 +27,8 @@ public sealed partial class HandoffCompletionReporter
         var ready = await StageReadyReportAsync(uow, origin, finish, result, libraryId, cancellationToken).ConfigureAwait(false);
 
         // Held from before the report is owed to after it is settled, so the heartbeat never finds it mid-delivery and sends it again.
+        // Stryker disable once Conditional : the claim is held only until this method returns and is read only to skip a second delivery; taking it with no target or with no delivery to make changes nothing the heartbeat or a caller can see.
+        // Stryker disable once Logical : the claim is held only until this method returns and is read only to skip a second delivery; taking it with no target or with no delivery to make changes nothing the heartbeat or a caller can see.
         using var claim = deliverNow && ready.Target is not null ? TryBeginDelivery(origin.SourceKey, origin.HandoffId!) : null;
         PendingReport? owed;
         try
@@ -127,6 +129,7 @@ public sealed partial class HandoffCompletionReporter
         var relative = targets[0].RelativePath;
         var fileState = FileReportState(body);
         var outcome = new ReportedOutcome(fileState, body, relative, [relative], libraryId);
+        // Stryker disable once Conditional : SkipReason is read only when Target is null, so setting it when there is a target changes nothing.
         return new StagedReport(outcome, target, target is null ? resolution.Reason : null, resolution.KeepOwed, unplacedFolder is null ? null : new Unplaced(unplacedFolder, fileState));
     }
 
@@ -154,6 +157,7 @@ public sealed partial class HandoffCompletionReporter
         var folderState = IsSupersededReport(folderBody) ? HandoffLedgerRules.Cancelled : state;
         var folderOutcome = new ReportedOutcome(folderState, folderBody, row.RelativePath, delivered, libraryId ?? row.LibraryId);
         var unplaced = !managerFolder.Readable && delivered.Count > 0 ? new Unplaced(localFolder!, folderState) : null;
+        // Stryker disable once Conditional : SkipReason is read only when Target is null, so setting it when there is a target changes nothing.
         return new StagedReport(folderOutcome, target, target is null ? resolution.Reason : null, resolution.KeepOwed, unplaced);
     }
 
@@ -213,7 +217,7 @@ public sealed partial class HandoffCompletionReporter
             return null;
         }
 
-        var owed = new PendingReport(origin.CallbackPath, origin.ReleaseName, origin.LibraryId, body, outcome.LibraryId, outcome.Subject, outcome.Files, Unplaced: unplaced);
+        var owed = new PendingReport(origin.CallbackPath, origin.LibraryId, body, outcome.LibraryId, outcome.Subject, outcome.Files, Unplaced: unplaced);
         await HandoffLedgerStore.SetPendingReportAsync(uow, origin.SourceKey, origin.HandoffId!, owed.ToJson()).ConfigureAwait(false);
         return owed;
     }

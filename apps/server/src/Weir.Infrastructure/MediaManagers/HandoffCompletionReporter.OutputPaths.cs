@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Weir.Core.Json;
 using Weir.Core.MediaManagers;
+using Weir.Infrastructure.IO;
 
 namespace Weir.Infrastructure.MediaManagers;
 
@@ -44,7 +45,7 @@ public sealed partial class HandoffCompletionReporter
             return null;
         }
 
-        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var comparison = PathContainment.Comparison;
         var fileParts = file.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Where(p => p.Length > 0).ToList();
         var folderParts = folder.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Where(p => p.Length > 0).ToList();
         if (fileParts.Count <= folderParts.Count || !folderParts.Select((part, i) => string.Equals(part, fileParts[i], comparison)).All(same => same))

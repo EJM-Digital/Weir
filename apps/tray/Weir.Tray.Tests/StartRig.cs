@@ -23,11 +23,13 @@ internal sealed class StartRig : IDisposable
 
     private readonly TempDirectory _home = TempDirectory.AsWeirHome();
 
-    internal StartRig(StartPolicy? policy = null, Func<double>? random01 = null, bool portUnknown = false)
+    // serverBesideInstall: the server is in the folder above the install folder, where a server of an older layout is.
+    internal StartRig(StartPolicy? policy = null, Func<double>? random01 = null, bool portUnknown = false, bool serverBesideInstall = false)
     {
         Clock = new DelayWatchingTimeProvider();
-        var install = Path.Combine(_home.Path, "install");
-        Server = Path.Combine(install, "server");
+        var install = serverBesideInstall ? Path.Combine(_home.Path, "bundle", "install") : Path.Combine(_home.Path, "install");
+        Server = serverBesideInstall ? Path.Combine(_home.Path, "bundle") : Path.Combine(install, "server");
+        Directory.CreateDirectory(install);
         StandInServers.Install(Server);
         Host = new ServerHost(_home.Path, install, portUnknown ? 0 : FreePort(), ListenScope.ThisPcOnly, policy, Clock, random01 ?? (() => 0));
     }

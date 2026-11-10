@@ -234,6 +234,66 @@ public sealed class ServerHostEdgeTests
     }
 
     [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_watchdog_that_finds_no_exited_server_by_the_time_it_acts_changes_nothing()
+    {
+        // A quit can clear the server between the watchdog's look and its restart: there is then nothing that exited.
+        using var rig = new StartRig();
+        var phase = rig.Host.Phase;
+
+        var back = await rig.Host.RestartAfterExitAsync(null, CancellationToken.None);
+
+        Assert.True(back);
+        Assert.Equal(phase, rig.Host.Phase);
+        Assert.Empty(rig.Starts);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task The_server_is_started_without_a_window_of_its_own_and_with_its_output_taken_by_the_tray()
+    {
+        using var rig = new StartRig();
+        ProcessStartInfo? seen = null;
+        rig.Host.Launch = info =>
+        {
+            seen = info;
+            return Process.Start(info);
+        };
+
+        await rig.StartReadyAsync();
+
+        Assert.NotNull(seen);
+        Assert.True(seen.CreateNoWindow);
+        Assert.False(seen.UseShellExecute);
+        Assert.True(seen.RedirectStandardOutput);
+        Assert.True(seen.RedirectStandardError);
+        Assert.Equal(Path.Combine(rig.Server, "WeirServer.exe"), seen.FileName);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_host_the_test_owns_takes_no_more_changes_once_disposed()
+    {
+        using var home = TempDirectory.AsWeirHome();
+        var install = Path.Combine(home.Path, "install");
+        StandInServers.Install(Path.Combine(install, "server"));
+        var host = new ServerHost(home.Path, install, 0, ListenScope.ThisPcOnly, null, new DelayWatchingTimeProvider(), () => 0);
+        host.Dispose();
+
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => host.MoveToScopeAsync(ListenScope.OtherDevices, CancellationToken.None));
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
+    public async Task A_server_in_the_folder_above_the_install_folder_is_found_and_started()
+    {
+        using var rig = new StartRig(serverBesideInstall: true);
+
+        await rig.StartReadyAsync();
+
+        Assert.Single(rig.Starts);
+        Assert.Equal(ServerPhase.Running, rig.Host.Phase);
+        Assert.Contains($"Starting bundled server host: {Path.Combine(rig.Server, "WeirServer.exe")} (attempt 1)", rig.TrayLog, StringComparison.Ordinal);
+        Assert.Contains($"Bundled server host pid={rig.Starts[0].Pid}", rig.TrayLog, StringComparison.Ordinal);
+    }
+
+    [Fact(Timeout = TestTimeoutMs)]
     public async Task Choosing_the_devices_the_server_already_listens_for_changes_nothing()
     {
         using var rig = new StartRig();
@@ -258,6 +318,14 @@ public sealed class ServerHostEdgeTests
         Assert.Equal(ListenScope.OtherDevices, rig.Host.Scope);
         Assert.Equal(ServerPhase.Running, rig.Host.Phase);
         Assert.Equal(2, rig.Starts.Count);
+        Assert.Contains(
+            $"LAN access: restarting the server so that {ListenScope.OtherDevices.Describe()} (it was: {ListenScope.ThisPcOnly.Describe()}).",
+            rig.TrayLog,
+            StringComparison.Ordinal);
+
+        // The change has let go of the host: the next one is not kept waiting.
+        using var ceiling = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        Assert.Equal(ScopeChange.Unchanged, await rig.Host.MoveToScopeAsync(ListenScope.OtherDevices, ceiling.Token));
     }
 
     [Fact(Timeout = TestTimeoutMs)]
@@ -290,6 +358,11 @@ public sealed class ServerHostEdgeTests
         Assert.Equal(ScopeChange.Failed, await move);
         Assert.Equal(ListenScope.ThisPcOnly, rig.Host.Scope);
         Assert.Equal(ServerPhase.Running, rig.Host.Phase);
+        Assert.Contains($"The server did not start on port {rig.Host.Port} ({ListenScope.OtherDevices.Describe()}): exited with code 3", rig.TrayLog, StringComparison.Ordinal);
+        Assert.Contains(
+            $"LAN access: the server did not start that way, so it goes back to how it was: {ListenScope.ThisPcOnly.Describe()}.",
+            rig.TrayLog,
+            StringComparison.Ordinal);
     }
 
     [Fact(Timeout = TestTimeoutMs)]
@@ -318,11 +391,16 @@ public sealed class ServerHostEdgeTests
         File.Delete(rig.ReadyFile);
         rig.Host.StopHung = _ => Task.FromResult(ServerStopOutcome.KillFailed);
 
+        var phases = new List<ServerPhase>();
+        rig.Host.PhaseChanged += () => phases.Add(rig.Host.Phase);
+
         var move = rig.Host.MoveToScopeAsync(ListenScope.OtherDevices, CancellationToken.None);
         await rig.DriveAsync(move, After(rig.LatestReportedAsync));
 
         Assert.Equal(ScopeChange.Failed, await move);
         Assert.Equal(ServerPhase.Stopped, rig.Host.Phase);
+        // The first try ends Stopped on its own, and going back starts again and ends Stopped again.
+        Assert.Equal([ServerPhase.Starting, ServerPhase.Stopped, ServerPhase.Starting, ServerPhase.Stopped], phases);
         Assert.Contains("It is still running, so nothing is started beside it.", rig.TrayLog, StringComparison.Ordinal);
     }
 }

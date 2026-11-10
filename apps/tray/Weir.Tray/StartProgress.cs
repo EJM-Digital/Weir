@@ -21,14 +21,13 @@ sealed record StartProgress(int ProcessId, string Phase, int Step, int Steps, Ti
     /// <summary>The phase in the words the log uses.</summary>
     internal string Words => Phase switch
     {
-        "starting" => "starting",
         "opening_database" => "opening the database",
         "saving_copy" => "saving a copy of the data",
         "migrating" when Steps > 0 => string.Create(CultureInfo.InvariantCulture, $"updating the database (step {Step} of {Steps})"),
         "migrating" => "updating the database",
         "preparing" => "getting ready",
         "starting_listener" => "starting to listen",
-        "ready" => "ready",
+        // "starting", "ready" and a phase this tray does not know are named as the server wrote them.
         _ => Phase,
     };
 }

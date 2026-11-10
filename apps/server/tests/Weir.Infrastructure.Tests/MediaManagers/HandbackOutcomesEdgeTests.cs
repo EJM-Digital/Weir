@@ -200,6 +200,13 @@ public sealed class HandbackOutcomesEdgeTests : IDisposable
         var newest = await ImportAsync(Imported(Source, scope: "movie"));
         Assert.Equal(_movies, newest.LibraryId);
 
+        // The newest is the newest wherever it sits in the list, not only the first.
+        await ForgetEveryWordAsync();
+        await _fixture.Store.Execute($"UPDATE handbacks SET written_at = '2026-01-11 09:00:00' WHERE library_id = {_shows}");
+        var newerStill = await ImportAsync(Imported(Source, scope: "movie"));
+        Assert.Equal(_shows, newerStill.LibraryId);
+        await _fixture.Store.Execute($"UPDATE handbacks SET written_at = '2026-01-09 09:00:00' WHERE library_id = {_shows}");
+
         await ForgetEveryWordAsync();
         var noneOfTheKind = await ImportAsync(Imported(Source, scope: "tv"));
         Assert.Equal(_movies, noneOfTheKind.LibraryId);

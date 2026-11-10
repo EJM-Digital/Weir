@@ -40,7 +40,7 @@ public sealed partial class HandoffCompletionReporter
                 continue;
             }
 
-            var origin = new HandoffOrigin(sourceKey, handoffId, pending.CallbackPath, pending.ReleaseName, pending.ManagerLibraryId);
+            var origin = new HandoffOrigin(sourceKey, handoffId, pending.CallbackPath, null, pending.ManagerLibraryId);
             var (target, _) = await ResolveHandoffTargetAsync(uow, origin).ConfigureAwait(false);
             if (target is null)
             {
@@ -199,7 +199,6 @@ public sealed partial class HandoffCompletionReporter
     /// </summary>
     private sealed record PendingReport(
         string? CallbackPath,
-        string? ReleaseName,
         string? ManagerLibraryId,
         WireObject Body,
         long? LibraryId,
@@ -221,7 +220,6 @@ public sealed partial class HandoffCompletionReporter
         {
             var json = new WireObject()
                 .Set("callback_path", CallbackPath)
-                .Set("release_name", ReleaseName)
                 .Set("manager_library_id", ManagerLibraryId)
                 .Set("body", Body)
                 .Set("library_id", LibraryId)
@@ -263,7 +261,6 @@ public sealed partial class HandoffCompletionReporter
                     : subject is null ? [] : [subject];
                 return new PendingReport(
                     HandoffOrigin.OptionalText(dict.Get("callback_path")),
-                    HandoffOrigin.OptionalText(dict.Get("release_name")),
                     HandoffOrigin.OptionalText(dict.Get("manager_library_id")),
                     body,
                     dict.Get("library_id") is WireInteger library ? (long)library.Value : null,

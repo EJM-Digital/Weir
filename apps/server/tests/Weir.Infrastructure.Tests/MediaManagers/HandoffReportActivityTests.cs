@@ -91,6 +91,20 @@ public sealed class HandoffReportActivityTests : IDisposable
             WireConvert.Str(detail["next_action"]));
     }
 
+    [Fact]
+    public async Task A_report_is_recorded_under_processing_with_the_file_the_manager_the_answer_and_the_report_itself()
+    {
+        var (_, detail) = await RecordAsync("""{"status":"completed","releaseName":"Some.Film.2020"}""", Taken, "Film/film.mkv");
+
+        Assert.Equal("processing", await _store.ScalarText("SELECT module FROM activity_events ORDER BY id DESC LIMIT 1"));
+        Assert.Equal("Film/film.mkv", WireConvert.Str(detail["relative_media_path"]));
+        Assert.Equal(Manager, WireConvert.Str(detail["manager"]));
+        Assert.True(WireConvert.Truthy(detail["accepted"]));
+        Assert.Equal("accepted", WireConvert.Str(detail["delivery"]));
+        Assert.Equal("worker", WireConvert.Str(detail["trigger"]));
+        Assert.Equal("Some.Film.2020", WireConvert.Str(((WireObject)detail["report"])["releaseName"]));
+    }
+
     [Theory]
     [InlineData("""{"releaseName":"Some.Film.2020"}""", "Some.Film.2020")]
     [InlineData("""{"releaseName":""}""", "a handed-over file")]
